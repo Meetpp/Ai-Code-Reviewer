@@ -7,6 +7,7 @@ import { analyzeCode } from "../services/analysis.service";
 import { detectFrameworks } from "../services/framework.service";
 import { generateAISuggestions, generateFileReview } from "../services/ai.service";
 import { buildReport, ReviewReport } from "../services/report.service";
+import { createGitHubPR, AcceptedFileChange } from "../services/github.service";
 
 const router = Router();
 
@@ -108,6 +109,45 @@ router.post("/file", async (req: Request, res: Response) => {
       console.error("File review error:", err);
       res.status(500).json({ error: "Failed to analyze file" });
     }
+  }
+});
+
+router.post("/create-pr", async (req: Request, res: Response) => {
+  const { jobId, githubToken, acceptedChanges, prTitle } = req.body as {
+    jobId: string;
+    githubToken: string;
+    acceptedChanges: AcceptedFileChange[];
+    prTitle?: string;
+  };
+
+  if (!jobId || !githubToken || !acceptedChanges?.length) {
+    res.status(400).json({ error: "jobId, githubToken, and acceptedChanges are required" });
+    return;
+  }
+
+  const job = jobs.get(jobId);
+  if (!job) {
+    res.status(404).json({ error: "Job not found" });
+    return;
+  }
+
+  if (job.status !== "complete") {
+    res.status(400).json({ error: "Review not complete" });
+    return;
+  }
+
+  try {
+    const result = await createGitHubPR({
+      repoUrl: job.repoUrl,
+      githubToken,
+      acceptedChanges,
+      prTitle: prTitle || "AI Code Review Fixes",
+    });
+    res.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to create PR";
+    console.error("Create PR error:", message);
+    res.status(500).json({ error: message });
   }
 });
 

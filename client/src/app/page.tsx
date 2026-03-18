@@ -4,8 +4,9 @@ import { useState } from "react";
 import { SubmitForm } from "@/components/SubmitForm";
 import { ReportView } from "@/components/ReportView";
 import { StatusBar } from "@/components/StatusBar";
+import { AcceptedChangesProvider } from "@/context/AcceptedChangesContext";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 interface ReviewReport {
   repoUrl: string;
@@ -140,20 +141,22 @@ export default function HomePage() {
           </div>
         </div>
       ) : (
-        <div>
-          <button
-            onClick={() => {
-              setReport(null);
-              setJobId(null);
-              setStatus("idle");
-              setError(null);
-            }}
-            className="mb-8 text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2"
-          >
-            <span>&larr;</span> New Review
-          </button>
-          <ReportView report={report} jobId={jobId ?? ""} />
-        </div>
+        <AcceptedChangesProvider>
+          <div>
+            <button
+              onClick={() => {
+                setReport(null);
+                setJobId(null);
+                setStatus("idle");
+                setError(null);
+              }}
+              className="mb-8 text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+            >
+              <span>&larr;</span> New Review
+            </button>
+            <ReportView report={report} jobId={jobId ?? ""} />
+          </div>
+        </AcceptedChangesProvider>
       )}
     </div>
   );

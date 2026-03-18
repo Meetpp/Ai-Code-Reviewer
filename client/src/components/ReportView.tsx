@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { FileReviewDrawer } from "./FileReviewDrawer";
+import { CreatePRPanel } from "./CreatePRPanel";
+import { useAcceptedChanges } from "@/context/AcceptedChangesContext";
 
 interface ReviewReport {
   repoUrl: string;
@@ -45,6 +47,7 @@ interface ReviewReport {
 
 export function ReportView({ report, jobId }: { report: ReviewReport; jobId: string }) {
   const [drawerFile, setDrawerFile] = useState<string | null>(null);
+  const { totalAccepted, affectedFiles } = useAcceptedChanges();
 
   const scoreColor =
     report.qualityScore.overall >= 80
@@ -67,7 +70,7 @@ export function ReportView({ report, jobId }: { report: ReviewReport; jobId: str
     <>
       <div className="space-y-8">
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Code Review Report</h1>
             <p className="text-gray-400 mt-1 text-sm break-all">{report.repoUrl}</p>
@@ -75,6 +78,13 @@ export function ReportView({ report, jobId }: { report: ReviewReport; jobId: str
               Generated {new Date(report.generatedAt).toLocaleString()}
             </p>
           </div>
+          {totalAccepted > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-900/30 border border-green-800 text-sm">
+              <span className="text-green-400 font-semibold">{totalAccepted} change{totalAccepted !== 1 ? "s" : ""} accepted</span>
+              <span className="text-gray-600">·</span>
+              <span className="text-gray-400">{affectedFiles.length} file{affectedFiles.length !== 1 ? "s" : ""}</span>
+            </div>
+          )}
         </div>
 
         {/* Score + Overview */}
@@ -210,6 +220,9 @@ export function ReportView({ report, jobId }: { report: ReviewReport; jobId: str
         filePath={drawerFile}
         onClose={() => setDrawerFile(null)}
       />
+
+      {/* Create PR floating panel */}
+      <CreatePRPanel jobId={jobId} repoUrl={report.repoUrl} />
     </>
   );
 }
